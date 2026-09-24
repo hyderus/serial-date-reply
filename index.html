@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serial Date Reply Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glass-card {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.3);
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    .pulse-subtle {
+      animation: pulse-subtle 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-indigo-500 selection:text-white flex flex-col justify-between">
+
+  <!-- Background decorative glow -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px]"></div>
+    <div class="absolute top-1/2 -right-32 w-96 h-96 bg-emerald-600/15 rounded-full blur-[130px]"></div>
+    <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-sky-600/15 rounded-full blur-[120px]"></div>
+  </div>
+
+  <!-- Main Content Container -->
+  <div class="w-full max-w-3xl mx-auto px-4 py-8 sm:py-12">
+
+    <!-- Header Section -->
+    <header class="text-center mb-8">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-3">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        Fast & Simple Date Formula
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+        Serial Date <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-sky-300 to-emerald-400">Reply Generator</span>
+      </h1>
+      <p class="mt-2 text-slate-400 text-sm sm:text-base max-w-lg mx-auto">
+        Enter your serial number or 4-digit code. The system converts it to a standard date, adds a random +2, +3, or +4 days, and generates the new reply.
+      </p>
+    </header>
+
+    <!-- Main Card -->
+    <main class="glass-card rounded-2xl p-6 sm:p-8 glow-indigo shadow-2xl transition-all">
+
+      <!-- Navigation Tabs: Single vs Batch -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+        <div class="flex items-center gap-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+          <button id="tabSingle" onclick="switchMode('single')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm">
+            ⚡ Single Serial
+          </button>
+          <button id="tabBatch" onclick="switchMode('batch')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
+            📑 Batch Process
+          </button>
+        </div>
+
+        <!-- Mode / Offset Setting -->
+        <div class="flex items-center gap-1.5 text-xs text-slate-400">
+          <span class="hidden sm:inline">Days Added:</span>
+          <div class="inline-flex rounded-lg bg-slate-900 border border-slate-800 p-0.5">
+            <button onclick="setOffset('random')" id="btnOffsetRandom" class="px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              🎲 Random (+2,+3,+4)
+            </button>
+            <button onclick="setOffset(2)" id="btnOffset2" class="px-2 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white">
+              +2d
+            </button>
+            <button onclick="setOffset(3)" id="btnOffset3" class="px-2 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white">
+              +3d
+            </button>
+            <button onclick="setOffset(4)" id="btnOffset4" class="px-2 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white">
+              +4d
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SINGLE MODE VIEW -->
+      <div id="singleView" class="space-y-6">
+        
+        <!-- Input Section -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label for="serialInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Enter Serial Number or 4-Digit Code
+            </label>
+            <span class="text-xs text-slate-500 font-mono" id="charCount">0 characters</span>
+          </div>
+
+          <div class="relative">
+            <input
+              type="text"
+              id="serialInput"
+              placeholder="e.g. 4C15 or 4C15ABC123"
+              autocomplete="off"
+              autofocus
+              class="w-full bg-slate-900/90 border-2 border-slate-700/80 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 rounded-xl px-4 py-3.5 text-lg sm:text-xl font-mono text-white placeholder-slate-500 tracking-wider uppercase transition-all shadow-inner outline-none"
+            />
+            <button
+              id="clearBtn"
+              onclick="clearInput()"
+              class="hidden absolute right-3 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+
+          <!-- Quick Test Samples -->
+          <div class="flex flex-wrap items-center gap-1.5 mt-2.5 text-xs text-slate-400">
+            <span class="text-slate-500">Quick Test:</span>
+            <button onclick="setSample('4C15')" class="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-indigo-300 font-mono border border-slate-700/60 transition-colors">4C15</button>
+            <button onclick="setSample('4A29')" class="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-indigo-300 font-mono border border-slate-700/60 transition-colors">4A29</button>
+            <button onclick="setSample('4930')" class="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-indigo-300 font-mono border border-slate-700/60 transition-colors">4930</button>
+            <button onclick="setSample('4228')" class="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-indigo-300 font-mono border border-slate-700/60 transition-colors">4228 (Leap)</button>
+            <button onclick="setSample('4C30ABC789')" class="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-indigo-300 font-mono border border-slate-700/60 transition-colors">4C30ABC789</button>
+          </div>
+        </div>
+
+        <!-- ERROR MESSAGE -->
+        <div id="errorMessage" class="hidden p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-start gap-2.5">
+          <svg class="w-5 h-5 flex-shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span id="errorText">Please enter at least 4 characters.</span>
+        </div>
+
+        <!-- REPLY RESULT BOX -->
+        <div id="resultBox" class="p-6 rounded-2xl bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 glow-emerald transition-all">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              Generated Reply
+            </span>
+            <div id="offsetBadge" class="text-xs px-2.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-mono font-medium">
+              +3 days added
+            </div>
+          </div>
+
+          <!-- Large 4-digit code -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2">
+            <div>
+              <div class="text-xs text-slate-400 mb-1">New 4-Digit Code:</div>
+              <div id="reply4Digit" class="text-4xl sm:text-5xl font-black font-mono tracking-wider text-emerald-300 select-all">
+                ----
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center gap-2">
+              <button
+                id="copyBtn"
+                onclick="copyReply()"
+                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+              >
+                <svg id="copyIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span id="copyBtnText">Copy Reply</span>
+              </button>
+
+              <button
+                onclick="recalculate(true)"
+                title="Roll a new random date (+2, +3, or +4)"
+                class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition-all border border-slate-700 flex items-center gap-1.5 active:scale-95"
+              >
+                <span>🎲</span>
+                <span>Roll Again</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Full serial output if longer than 4 chars -->
+          <div id="fullSerialContainer" class="mt-4 pt-4 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span class="text-xs text-slate-400">Full Serial with New Code:</span>
+              <div id="replyFullSerial" class="text-base sm:text-lg font-mono font-bold text-indigo-300 select-all tracking-wider">
+                ----
+              </div>
+            </div>
+            <button
+              onclick="copyFullSerial()"
+              id="copyFullBtn"
+              class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-indigo-300 border border-indigo-500/20 transition-colors"
+            >
+              Copy Full Serial
+            </button>
+          </div>
+        </div>
+
+        <!-- FORMULA BREAKDOWN SECTION -->
+        <div id="breakdownSection" class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs space-y-3">
+          <div class="font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Formula Breakdown</span>
+            <span class="text-[11px] text-slate-500 font-normal font-sans">Step-by-step verification</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300 font-mono">
+            
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
+              <div class="text-[11px] text-indigo-400 font-sans font-semibold">1. Input Characters</div>
+              <div>• Year Char (Y): <span id="valY" class="text-white font-bold">-</span></div>
+              <div>• Month Char (M): <span id="valM" class="text-white font-bold">-</span></div>
+              <div>• Day Chars (DD): <span id="valDD" class="text-white font-bold">-</span></div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
+              <div class="text-[11px] text-sky-400 font-sans font-semibold">2. Standard Date</div>
+              <div>• Year = 2020 + Y = <span id="valYear" class="text-white font-bold">-</span></div>
+              <div>• Month = Dec(M) = <span id="valMonth" class="text-white font-bold">-</span> <span id="valMonthName" class="text-slate-500 text-[11px]"></span></div>
+              <div>• Day = DD = <span id="valDay" class="text-white font-bold">-</span></div>
+              <div class="text-emerald-400 font-semibold pt-0.5">📅 Date: <span id="valFullDate">-</span></div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
+              <div class="text-[11px] text-amber-400 font-sans font-semibold">3. Random Days Added</div>
+              <div>• Added Days: <span id="valAddedDays" class="text-amber-300 font-bold">-</span></div>
+              <div class="text-emerald-400 font-semibold pt-0.5">📅 New Date: <span id="valNewFullDate">-</span></div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
+              <div class="text-[11px] text-emerald-400 font-sans font-semibold">4. Converted 4-Digit Reply</div>
+              <div>• 1st Digit (Last digit of Year): <span id="valResD1" class="text-emerald-300 font-bold">-</span></div>
+              <div>• 2nd Digit (Month in Hex): <span id="valResD2" class="text-emerald-300 font-bold">-</span></div>
+              <div>• 3rd & 4th Digits (Day): <span id="valResD34" class="text-emerald-300 font-bold">-</span></div>
+              <div class="text-emerald-300 font-bold pt-0.5">➔ Reply: <span id="valFinalReply">-</span></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BATCH MODE VIEW -->
+      <div id="batchView" class="hidden space-y-5">
+        <div>
+          <label for="batchInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+            Paste Multiple Serial Numbers (One Per Line)
+          </label>
+          <textarea
+            id="batchInput"
+            rows="6"
+            placeholder="4C15&#10;4A29ABC12&#10;493012345&#10;4228XYZ"
+            class="w-full bg-slate-900/90 border-2 border-slate-700/80 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 rounded-xl p-4 text-sm font-mono text-white placeholder-slate-500 tracking-wider uppercase transition-all shadow-inner outline-none"
+          ></textarea>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            onclick="processBatch()"
+            class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
+          >
+            ⚡ Process Batch
+          </button>
+          <button
+            onclick="copyBatchResults()"
+            id="batchCopyBtn"
+            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition-colors"
+          >
+            📋 Copy All Replies
+          </button>
+          <button
+            onclick="downloadBatchCSV()"
+            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition-colors"
+          >
+            📥 Export CSV
+          </button>
+        </div>
+
+        <!-- Batch Results Table -->
+        <div id="batchTableContainer" class="hidden overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/80">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-950/80 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-3">#</th>
+                <th class="p-3">Original</th>
+                <th class="p-3">Original Date</th>
+                <th class="p-3">Offset</th>
+                <th class="p-3">New Date</th>
+                <th class="p-3 text-emerald-400">New 4-Digit</th>
+                <th class="p-3 text-indigo-400">Updated Serial</th>
+              </tr>
+            </thead>
+            <tbody id="batchTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Formula Reference Card (Small Footer helper) -->
+    <div class="mt-6 glass-card rounded-xl p-4 text-xs text-slate-400 border border-slate-800/80">
+      <div class="flex items-center gap-2 font-semibold text-slate-300 mb-1">
+        <span>📖 Active Formula Rules</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] leading-relaxed">
+        <div>• <strong>Y:</strong> Year = 2020 + Y (e.g. 4 = 2024)</div>
+        <div>• <strong>M:</strong> Month = 1-9, A=10, B=11, C=12</div>
+        <div>• <strong>DD:</strong> Day = 01-31 (auto handles month/leap rollover)</div>
+        <div>• <strong>Days Added:</strong> Random +2, +3, or +4 days</div>
+        <div>• <strong>1st Digit:</strong> Last digit of new year</div>
+        <div>• <strong>2nd Digit:</strong> Hex of new month (1-9, A, B, C)</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="w-full text-center py-4 text-slate-500 text-xs border-t border-slate-900">
+    Serial Date Reply Tool • Simple & Instant
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // State
+    let selectedOffsetMode = 'random'; // 'random', 2, 3, or 4
+    let currentResult = null;
+    let batchData = [];
+
+    const monthNames = [
+      '', 'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    // Elements
+    const serialInput = document.getElementById('serialInput');
+    const charCount = document.getElementById('charCount');
+    const clearBtn = document.getElementById('clearBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    const resultBox = document.getElementById('resultBox');
+    const reply4Digit = document.getElementById('reply4Digit');
+    const replyFullSerial = document.getElementById('replyFullSerial');
+    const fullSerialContainer = document.getElementById('fullSerialContainer');
+    const offsetBadge = document.getElementById('offsetBadge');
+    const breakdownSection = document.getElementById('breakdownSection');
+
+    // Breakdown elements
+    const valY = document.getElementById('valY');
+    const valM = document.getElementById('valM');
+    const valDD = document.getElementById('valDD');
+    const valYear = document.getElementById('valYear');
+    const valMonth = document.getElementById('valMonth');
+    const valMonthName = document.getElementById('valMonthName');
+    const valDay = document.getElementById('valDay');
+    const valFullDate = document.getElementById('valFullDate');
+    const valAddedDays = document.getElementById('valAddedDays');
+    const valNewFullDate = document.getElementById('valNewFullDate');
+    const valResD1 = document.getElementById('valResD1');
+    const valResD2 = document.getElementById('valResD2');
+    const valResD34 = document.getElementById('valResD34');
+    const valFinalReply = document.getElementById('valFinalReply');
+
+    // Core Calculation Logic
+    function computeSerial(input, forcedOffset) {
+      const clean = input.replace(/\s+/g, '').toUpperCase();
+      if (clean.length < 4) {
+        return { error: 'Please enter at least 4 characters (Y, M, DD).' };
+      }
+
+      const yChar = clean[0];
+      const mChar = clean[1];
+      const ddStr = clean.slice(2, 4);
+
+      // 1. Year = 2020 + Y
+      const yVal = parseInt(yChar, 10);
+      if (isNaN(yVal)) {
+        return { error: `Invalid Year character '${yChar}'. Year must be a digit (0-9).` };
+      }
+      const origYear = 2020 + yVal;
+
+      // 2. Month = Decimal equivalent of M (1-9, A=10, B=11, C=12)
+      const origMonth = parseInt(mChar, 16);
+      if (isNaN(origMonth) || origMonth < 1 || origMonth > 12) {
+        return { error: `Invalid Month character '${mChar}'. Must be 1-9, A(10), B(11), or C(12).` };
+      }
+
+      // 3. Day = DD
+      const origDay = parseInt(ddStr, 10);
+      if (isNaN(origDay) || origDay < 1 || origDay > 31) {
+        return { error: `Invalid Day '${ddStr}'. Day must be between 01 and 31.` };
+      }
+
+      // 4. Random offset: +2, +3, or +4
+      let offset = forcedOffset;
+      if (!offset || offset === 'random') {
+        const options = [2, 3, 4];
+        offset = options[Math.floor(Math.random() * options.length)];
+      } else {
+        offset = parseInt(offset, 10);
+      }
+
+      // 5. Standard date & add offset using UTC to prevent any DST or local timezone shifts
+      const date = new Date(Date.UTC(origYear, origMonth - 1, origDay));
+      date.setUTCDate(date.getUTCDate() + offset);
+
+      const newYear = date.getUTCFullYear();
+      const newMonth = date.getUTCMonth() + 1; // 1-12
+      const newDay = date.getUTCDate();
+
+      // 6. Convert new date back to 4-digit format:
+      // 1st digit = Last digit of the new year
+      const d1 = String(newYear % 10);
+
+      // 2nd digit = Hexadecimal equivalent of the new month (1-9, A, B, C)
+      const d2 = newMonth.toString(16).toUpperCase();
+
+      // 3rd & 4th digits = New day (01-31)
+      const d34 = String(newDay).padStart(2, '0');
+
+      const reply4 = `${d1}${d2}${d34}`;
+      const suffix = clean.slice(4);
+      const fullReply = suffix.length > 0 ? reply4 + suffix : reply4;
+
+      return {
+        input: clean,
+        yChar,
+        mChar,
+        ddStr,
+        origYear,
+        origMonth,
+        origDay,
+        offset,
+        newYear,
+        newMonth,
+        newDay,
+        d1,
+        d2,
+        d34,
+        reply4,
+        fullReply,
+        hasSuffix: suffix.length > 0
+      };
+    }
+
+    // Live update when typing
+    function handleInput() {
+      const val = serialInput.value;
+      charCount.textContent = `${val.length} character${val.length === 1 ? '' : 's'}`;
+      clearBtn.classList.toggle('hidden', val.length === 0);
+
+      if (val.trim().length === 0) {
+        errorMessage.classList.add('hidden');
+        resetDisplays();
+        return;
+      }
+
+      recalculate(false);
+    }
+
+    function recalculate(triggerAnimation) {
+      const val = serialInput.value;
+      if (!val || val.trim().length === 0) return;
+
+      const res = computeSerial(val, selectedOffsetMode);
+
+      if (res.error) {
+        errorMessage.classList.remove('hidden');
+        errorText.textContent = res.error;
+        reply4Digit.textContent = '----';
+        replyFullSerial.textContent = '----';
+        resetBreakdown();
+        return;
+      }
+
+      errorMessage.classList.add('hidden');
+      currentResult = res;
+
+      // Update primary reply
+      reply4Digit.textContent = res.reply4;
+      if (triggerAnimation) {
+        reply4Digit.classList.remove('pulse-subtle');
+        void reply4Digit.offsetWidth; // trigger reflow
+        reply4Digit.classList.add('pulse-subtle');
+      }
+
+      // Update full serial if available
+      if (res.hasSuffix) {
+        fullSerialContainer.classList.remove('hidden');
+        replyFullSerial.textContent = res.fullReply;
+      } else {
+        fullSerialContainer.classList.add('hidden');
+      }
+
+      // Update offset badge
+      offsetBadge.textContent = `+${res.offset} days added`;
+
+      // Update breakdown
+      valY.textContent = res.yChar;
+      valM.textContent = `${res.mChar} (${res.origMonth})`;
+      valDD.textContent = res.ddStr;
+
+      valYear.textContent = `${res.origYear}`;
+      valMonth.textContent = `${res.origMonth}`;
+      valMonthName.textContent = `(${monthNames[res.origMonth]})`;
+      valDay.textContent = `${res.origDay}`;
+      valFullDate.textContent = `${res.origYear}-${String(res.origMonth).padStart(2, '0')}-${String(res.origDay).padStart(2, '0')}`;
+
+      valAddedDays.textContent = `+${res.offset} days`;
+      valNewFullDate.textContent = `${res.newYear}-${String(res.newMonth).padStart(2, '0')}-${String(res.newDay).padStart(2, '0')} (${monthNames[res.newMonth]})`;
+
+      valResD1.textContent = `${res.d1} (from ${res.newYear})`;
+      valResD2.textContent = `${res.d2} (Month ${res.newMonth})`;
+      valResD34.textContent = `${res.d34} (Day ${res.newDay})`;
+      valFinalReply.textContent = res.reply4;
+    }
+
+    function resetDisplays() {
+      reply4Digit.textContent = '----';
+      replyFullSerial.textContent = '----';
+      fullSerialContainer.classList.add('hidden');
+      offsetBadge.textContent = `+0 days`;
+      resetBreakdown();
+    }
+
+    function resetBreakdown() {
+      valY.textContent = '-';
+      valM.textContent = '-';
+      valDD.textContent = '-';
+      valYear.textContent = '-';
+      valMonth.textContent = '-';
+      valMonthName.textContent = '';
+      valDay.textContent = '-';
+      valFullDate.textContent = '-';
+      valAddedDays.textContent = '-';
+      valNewFullDate.textContent = '-';
+      valResD1.textContent = '-';
+      valResD2.textContent = '-';
+      valResD34.textContent = '-';
+      valFinalReply.textContent = '-';
+    }
+
+    function clearInput() {
+      serialInput.value = '';
+      serialInput.focus();
+      handleInput();
+    }
+
+    function setSample(sample) {
+      serialInput.value = sample;
+      handleInput();
+    }
+
+    function setOffset(val) {
+      selectedOffsetMode = val;
+      // Update UI active styles
+      ['Random', '2', '3', '4'].forEach(opt => {
+        const btn = document.getElementById(`btnOffset${opt}`);
+        if (!btn) return;
+        const isSelected = (val === 'random' && opt === 'Random') || (String(val) === opt);
+        if (isSelected) {
+          btn.className = 'px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30';
+        } else {
+          btn.className = 'px-2 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white';
+        }
+      });
+      recalculate(true);
+    }
+
+    // Copy Reply
+    function copyReply() {
+      if (!currentResult || !currentResult.reply4) return;
+      navigator.clipboard.writeText(currentResult.reply4).then(() => {
+        const copyBtnText = document.getElementById('copyBtnText');
+        const originalText = copyBtnText.textContent;
+        copyBtnText.textContent = 'Copied! ✨';
+        setTimeout(() => {
+          copyBtnText.textContent = originalText;
+        }, 1500);
+      });
+    }
+
+    function copyFullSerial() {
+      if (!currentResult || !currentResult.fullReply) return;
+      navigator.clipboard.writeText(currentResult.fullReply).then(() => {
+        const btn = document.getElementById('copyFullBtn');
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.textContent = orig;
+        }, 1500);
+      });
+    }
+
+    // Switch Single / Batch Mode
+    function switchMode(mode) {
+      const isSingle = mode === 'single';
+      document.getElementById('singleView').classList.toggle('hidden', !isSingle);
+      document.getElementById('batchView').classList.toggle('hidden', isSingle);
+
+      const tabSingle = document.getElementById('tabSingle');
+      const tabBatch = document.getElementById('tabBatch');
+
+      if (isSingle) {
+        tabSingle.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm';
+        tabBatch.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+        serialInput.focus();
+      } else {
+        tabSingle.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+        tabBatch.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm';
+        document.getElementById('batchInput').focus();
+      }
+    }
+
+    // Batch Processing
+    function processBatch() {
+      const text = document.getElementById('batchInput').value;
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) return;
+
+      batchData = [];
+      const tbody = document.getElementById('batchTableBody');
+      tbody.innerHTML = '';
+
+      lines.forEach((line, idx) => {
+        const res = computeSerial(line, selectedOffsetMode);
+        batchData.push({ original: line, ...res });
+
+        const tr = document.createElement('tr');
+        if (res.error) {
+          tr.className = 'bg-rose-500/5 hover:bg-rose-500/10 text-rose-300';
+          tr.innerHTML = `
+            <td class="p-3 text-slate-500">${idx + 1}</td>
+            <td class="p-3 font-bold">${line}</td>
+            <td class="p-3 colspan-5 text-rose-400" colspan="5">${res.error}</td>
+          `;
+        } else {
+          tr.className = 'hover:bg-slate-800/40 transition-colors';
+          tr.innerHTML = `
+            <td class="p-3 text-slate-500">${idx + 1}</td>
+            <td class="p-3 font-semibold text-slate-200">${res.input}</td>
+            <td class="p-3 text-slate-400">${res.origYear}-${String(res.origMonth).padStart(2,'0')}-${String(res.origDay).padStart(2,'0')}</td>
+            <td class="p-3 text-amber-400 font-bold">+${res.offset}d</td>
+            <td class="p-3 text-slate-300">${res.newYear}-${String(res.newMonth).padStart(2,'0')}-${String(res.newDay).padStart(2,'0')}</td>
+            <td class="p-3 font-bold text-emerald-400 select-all">${res.reply4}</td>
+            <td class="p-3 text-indigo-300 select-all font-semibold">${res.fullReply}</td>
+          `;
+        }
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('batchTableContainer').classList.remove('hidden');
+    }
+
+    function copyBatchResults() {
+      if (batchData.length === 0) return;
+      const validReplies = batchData.filter(d => !d.error).map(d => d.hasSuffix ? d.fullReply : d.reply4).join('\n');
+      navigator.clipboard.writeText(validReplies).then(() => {
+        const btn = document.getElementById('batchCopyBtn');
+        const orig = btn.textContent;
+        btn.textContent = 'Copied! ✨';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+      });
+    }
+
+    function downloadBatchCSV() {
+      if (batchData.length === 0) return;
+      const rows = [
+        ['Index', 'Original Input', 'Original Date', 'Days Added', 'New Date', 'New 4-Digit Code', 'Full Reply Serial']
+      ];
+
+      batchData.forEach((d, idx) => {
+        if (d.error) {
+          rows.push([idx + 1, d.original, 'ERROR: ' + d.error, '', '', '', '']);
+        } else {
+          rows.push([
+            idx + 1,
+            d.input,
+            `${d.origYear}-${String(d.origMonth).padStart(2,'0')}-${String(d.origDay).padStart(2,'0')}`,
+            `+${d.offset}`,
+            `${d.newYear}-${String(d.newMonth).padStart(2,'0')}-${String(d.newDay).padStart(2,'0')}`,
+            d.reply4,
+            d.fullReply
+          ]);
+        }
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `serial_replies_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Keyboard shortcuts: Space / Enter to re-roll
+    serialInput.addEventListener('input', handleInput);
+    serialInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        recalculate(true);
+      }
+    });
+
+    // Default initialization
+    setSample('4C15');
+  </script>
+</body>
+</html>
